@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Buffers;
 
 namespace Tesseract.Tests.Leptonica.PixTests
 {
@@ -145,6 +146,44 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        public void LoadFromMemoryTest()
+        {
+			var sourcePixFilename = TestFilePath(@"processing/table.png");
+			var data = File.ReadAllBytes(sourcePixFilename);
+
+            using(var filePix = Pix.LoadFromFile(sourcePixFilename))
+            using(var memoryPix = Pix.LoadFromMemory(data))
+            {
+                Assert.True(filePix.Equals(memoryPix));
+            }
+        }
+
+		[Test]
+		public void LoadFromMemoryWithLargeBufferTest()
+		{
+			var sourcePixFilename = TestFilePath(@"processing/table.png");
+			var data = File.ReadAllBytes(sourcePixFilename);
+
+            //Simulate getting the buffer from a memorystream or ArrayPool.Rent. Those buffers are often longer than the actual data
+            var largeBuffer = new byte[data.Length + 100];
+
+            //fill the array with garbage
+            for(int i = 0; i < largeBuffer.Length; i++)
+            {
+                largeBuffer[i] = (byte)(i % 250);
+            }
+
+            data.CopyTo(largeBuffer, 0);
+
+			using (var filePix = Pix.LoadFromFile(sourcePixFilename))
+			using (var memoryPix = Pix.LoadFromMemory(largeBuffer, data.Length))
+			{
+				Assert.True(filePix.Equals(memoryPix));
+			}
+		}
+
+
+		[Test]
         public void DespeckleTest()
         {
             var sourcePixFilename = TestFilePath(@"processing/w91frag.jpg");
