@@ -120,7 +120,21 @@ namespace Tesseract
 	        return Create(handle);
 		}
 
-        public static Pix LoadTiffFromMemory(byte[] bytes)
+		public static Pix LoadFromMemory(byte[] bytes, int length)
+		{
+			IntPtr handle;
+			fixed (byte* ptr = bytes)
+			{
+				handle = Interop.LeptonicaApi.Native.pixReadMem(ptr, length);
+			}
+			if (handle == IntPtr.Zero)
+			{
+				throw new IOException("Failed to load image from memory.");
+			}
+			return Create(handle);
+		}
+
+		public static Pix LoadTiffFromMemory(byte[] bytes)
         {
             IntPtr handle;
             fixed (byte* ptr = bytes)
